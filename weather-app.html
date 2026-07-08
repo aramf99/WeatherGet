@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple Weather Lookup</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    padding-top: 80px;
+    margin: 0;
+  }
+  .card {
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    width: 340px;
+    text-align: center;
+  }
+  h1 { font-size: 20px; margin-bottom: 20px; color: #222; }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  button {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:hover { background: #1d4ed8; }
+  button:disabled { background: #93b4f0; cursor: not-allowed; }
+  #result {
+    margin-top: 20px;
+    min-height: 20px;
+    font-size: 15px;
+    color: #333;
+    text-align: left;
+  }
+  #result .temp { font-size: 32px; font-weight: 600; color: #111; }
+  .error { color: #d33; }
+  .hint {
+    font-size: 12px;
+    color: #888;
+    margin-top: 16px;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🌤️ Weather Lookup</h1>
+  <input id="apiKey" type="text" placeholder="Paste your OpenWeatherMap API key" />
+  <input id="city" type="text" placeholder="Enter a city (e.g. Hamburg)" />
+  <button id="searchBtn">Get Weather</button>
+  <div id="result"></div>
+  <div class="hint">
+    Get a free API key at
+    <a href="https://openweathermap.org/api" target="_blank">openweathermap.org/api</a>.
+    New keys can take a few minutes to activate.
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById('searchBtn');
+  const cityInput = document.getElementById('city');
+  const keyInput = document.getElementById('apiKey');
+  const result = document.getElementById('result');
+
+  async function getWeather() {
+    const city = cityInput.value.trim();
+    const apiKey = keyInput.value.trim();
+
+    if (!apiKey) {
+      result.innerHTML = '<span class="error">Please enter your API key.</span>';
+      return;
+    }
+    if (!city) {
+      result.innerHTML = '<span class="error">Please enter a city name.</span>';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    result.textContent = '';
+
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Something went wrong.');
+      }
+
+      result.innerHTML = `
+        <div class="temp">${Math.round(data.main.temp)}°C</div>
+        <div>${data.weather[0].main} — ${data.weather[0].description}</div>
+        <div>Feels like: ${Math.round(data.main.feels_like)}°C</div>
+        <div>Humidity: ${data.main.humidity}%</div>
+        <div>Wind: ${data.wind.speed} m/s</div>
+        <div>📍 ${data.name}, ${data.sys.country}</div>
+      `;
+    } catch (err) {
+      result.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Get Weather';
+    }
+  }
+
+  btn.addEventListener('click', getWeather);
+  cityInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') getWeather(); });
+  keyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') getWeather(); });
+</script>
+
+</body>
+</html>
